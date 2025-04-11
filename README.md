@@ -1,20 +1,15 @@
-# Nagram X
+# Negram
 
-[中文](/README_zh-CN.md)
-
-A variant of [Nagram](https://github.com/NextAlone/Nagram) with additional features.
+A fork of [Nagram X](https://github.com/risin42/NagramX), which is a variant of [Nagram](https://github.com/NextAlone/Nagram) with additional features.
 
 ## Download
 
-You can grab the latest versions in these two ways:
+You can grab the latest versions:
 
-*   **CI Channel:** [https://t.me/NagramX](https://t.me/NagramX)
-*   **GitHub Actions Artifacts:**  You can also download artifacts from the [GitHub Actions](https://github.com/risin42/NagramX/actions/workflows/staging.yml) page
+*   **GitHub Actions Artifacts:**  UNAVAILIABLE
 
 ## NagramX Changes
 - **Additional Features**
-  - Save Deleted Messages
-  - Save Edits History
   - AI Translator
   - Hide the Premium and Help sections in settings
   - Hide side share button
@@ -33,6 +28,7 @@ You can grab the latest versions in these two ways:
   - Save attachments by chat name
   - Send messages silently by default
   - Use folder name as title
+  - (Save Deleted/Edited messages was deleted, because main goal of this is to have listed above changes, but without possibility to get a ban)
 
 - **Cleanup & Optimization**
   - Removed integrity checks ```jni/integrity```
