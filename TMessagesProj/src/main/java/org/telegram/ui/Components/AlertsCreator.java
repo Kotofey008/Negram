@@ -156,11 +156,6 @@ import tw.nekomimi.nekogram.utils.VibrateUtil;
 import static tw.nekomimi.nekogram.settings.NekoChatSettingsActivity.getDeleteMenuChecks;
 import xyz.nextalone.nagram.NaConfig;
 
-import com.radolyn.ayugram.AyuConstants;
-import com.radolyn.ayugram.messages.AyuMessagesController;
-import com.radolyn.ayugram.messages.AyuSavePreferences;
-import com.radolyn.ayugram.utils.AyuState;
-
 public class AlertsCreator {
     public final static int PERMISSIONS_REQUEST_TOP_ICON_SIZE = 72;
     public final static int NEW_DENY_DIALOG_TOP_ICON_SIZE = 52;
@@ -6332,10 +6327,6 @@ public class AlertsCreator {
             count = selectedMessages[0].size() + selectedMessages[1].size();
         }
 
-        // --- AyuGram hook
-        FrameLayout ayuFrameLayout = null;
-        // --- AyuGram hook
-
         long dialogId;
         if (encryptedChat != null) {
             dialogId = DialogObject.makeEncryptedDialogId(encryptedChat.id);
@@ -6499,7 +6490,6 @@ public class AlertsCreator {
             } else if (!hasNotOut && myMessagesCount > 0 && hasNonDiceMessages) {
                 hasDeleteForAllCheck = true;
                 FrameLayout frameLayout = new FrameLayout(activity);
-                ayuFrameLayout = frameLayout;
                 CheckBoxCell cell = new CheckBoxCell(activity, 1, resourcesProvider);
                 cell.setBackgroundDrawable(Theme.getSelectorDrawable(false));
                 if (chat != null && hasNotOut) {
@@ -6557,7 +6547,6 @@ public class AlertsCreator {
             if (myMessagesCount > 0 && hasNonDiceMessages && (user == null || !UserObject.isDeleted(user))) {
                 hasDeleteForAllCheck = true;
                 FrameLayout frameLayout = new FrameLayout(activity);
-                ayuFrameLayout = frameLayout;
                 CheckBoxCell cell = new CheckBoxCell(activity, 1, resourcesProvider);
                 cell.setBackgroundDrawable(Theme.getSelectorDrawable(false));
                 deleteForAll[0] = true;
@@ -6580,130 +6569,6 @@ public class AlertsCreator {
             }
         }
 
-        // --- AyuGram hook
-        final boolean[] keepLocally = {false};
-
-        if (ayuFrameLayout == null) {
-            ayuFrameLayout = new FrameLayout(activity);
-            builder.setView(ayuFrameLayout);
-            builder.setCustomViewOffset(9);
-        }
-
-        CheckBoxCell cell = new CheckBoxCell(activity, 1, resourcesProvider);
-        cell.setBackgroundDrawable(Theme.getSelectorDrawable(false));
-        cell.setText(LocaleController.getString(R.string.DeleteKeepLocally), "", false, false);
-        cell.setTag(4);
-
-        cell.setPadding(LocaleController.isRTL ? AndroidUtilities.dp(16) : AndroidUtilities.dp(8), 0, LocaleController.isRTL ? AndroidUtilities.dp(8) : AndroidUtilities.dp(16), 0);
-        ayuFrameLayout.addView(cell, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48, Gravity.TOP | Gravity.LEFT, 0, 48 * ayuFrameLayout.getChildCount(), 0, 0));
-
-        cell.setOnClickListener(v -> {
-            CheckBoxCell cell1 = (CheckBoxCell) v;
-            keepLocally[0] = !keepLocally[0];
-            cell1.setChecked(keepLocally[0], true);
-        });
-        // --- AyuGram hook
-
-        AlertDialog.OnButtonClickListener deleteAction = (dialogInterface, i) -> {
-            if (keepLocally[0]) {
-                AyuState.setHideSelection(true, 1);
-            }
-
-            ArrayList<Integer> ids = null;
-            long thisDialogId = dialogId;
-            if (isSavedMessages) {
-                thisDialogId = UserConfig.getInstance(currentAccount).getClientUserId();
-            }
-            if (selectedMessage != null) {
-                ids = new ArrayList<>();
-                ArrayList<Long> random_ids = null;
-                if (selectedGroup != null) {
-                    for (int a = 0; a < selectedGroup.messages.size(); a++) {
-                        MessageObject messageObject = selectedGroup.messages.get(a);
-                        ids.add(messageObject.getId());
-                        // --- AyuGram hook
-                        if (!keepLocally[0]) {
-                            AyuState.permitDeleteMessage(dialogId, messageObject.getId());
-                        } else {
-                            var prefs = new AyuSavePreferences(messageObject.messageOwner, currentAccount);
-                            prefs.setDialogId(dialogId);
-                            AyuMessagesController.getInstance().onMessageDeleted(prefs);
-                        }
-                        // --- AyuGram hook
-                        if (encryptedChat != null && messageObject.messageOwner.random_id != 0 && messageObject.type != 10) {
-                            if (random_ids == null) {
-                                random_ids = new ArrayList<>();
-                            }
-                            random_ids.add(messageObject.messageOwner.random_id);
-                        }
-                    }
-                } else {
-                    ids.add(selectedMessage.getId());
-                    // --- AyuGram hook
-                    if (!keepLocally[0]) {
-                        AyuState.permitDeleteMessage(dialogId, selectedMessage.getId());
-                    } else {
-                        var prefs = new AyuSavePreferences(selectedMessage.messageOwner, currentAccount);
-                        prefs.setDialogId(dialogId);
-                        AyuMessagesController.getInstance().onMessageDeleted(prefs);
-                    }
-
-                    if (encryptedChat != null && selectedMessage.messageOwner.random_id != 0 && selectedMessage.type != 10) {
-                        random_ids = new ArrayList<>();
-                        random_ids.add(selectedMessage.messageOwner.random_id);
-                    }
-                }
-                if (mergeDialogId != 0 && selectedMessage.messageOwner.peer_id != null && selectedMessage.messageOwner.peer_id.chat_id == -mergeDialogId) {
-                    thisDialogId = mergeDialogId;
-                }
-                // --- AyuGram hook
-                ArrayList<Integer> finalIds = ids;
-                AndroidUtilities.runOnUIThread(() -> {
-                    // invalidating views
-                    NotificationCenter.getInstance(currentAccount).postNotificationName(AyuConstants.MESSAGES_DELETED_NOTIFICATION, dialogId, finalIds);
-                });
-                // --- AyuGram hook
-                MessagesController.getInstance(currentAccount).deleteMessages(ids, random_ids, encryptedChat, thisDialogId, topicId, deleteForAll[0], mode);
-            } else {
-                for (int a = 1; a >= 0; a--) {
-                    ids = new ArrayList<>();
-                    for (int b = 0; b < selectedMessages[a].size(); b++) {
-                        ids.add(selectedMessages[a].keyAt(b));
-                        // --- AyuGram hook
-                        if (!keepLocally[0]) {
-                            AyuState.permitDeleteMessage(dialogId, selectedMessages[a].keyAt(b));
-                        } else {
-                            var prefs = new AyuSavePreferences(selectedMessages[a].valueAt(b).messageOwner, currentAccount);
-                            prefs.setDialogId(dialogId);
-                            AyuMessagesController.getInstance().onMessageDeleted(prefs);
-                        }
-                        // --- AyuGram hook
-                    }
-                    ArrayList<Long> random_ids = null;
-                    if (encryptedChat != null) {
-                        random_ids = new ArrayList<>();
-                        for (int b = 0; b < selectedMessages[a].size(); b++) {
-                            MessageObject msg = selectedMessages[a].valueAt(b);
-                            if (msg.messageOwner.random_id != 0 && msg.type != 10) {
-                                random_ids.add(msg.messageOwner.random_id);
-                            }
-                        }
-                    }
-                    // --- AyuGram hook
-                    ArrayList<Integer> finalIds = ids;
-                    AndroidUtilities.runOnUIThread(() -> {
-                        // invalidating views
-                        NotificationCenter.getInstance(currentAccount).postNotificationName(AyuConstants.MESSAGES_DELETED_NOTIFICATION, dialogId, finalIds);
-                    });
-                    // --- AyuGram hook
-                    MessagesController.getInstance(currentAccount).deleteMessages(ids, random_ids, encryptedChat, (a == 1 && mergeDialogId != 0) ? mergeDialogId : thisDialogId, topicId, deleteForAll[0], mode);
-                    selectedMessages[a].clear();
-                }
-            }
-            if (onDelete != null) {
-                onDelete.run();
-            }
-        };
 
         if (isSavedMessages) {
             if (count == 1) {
